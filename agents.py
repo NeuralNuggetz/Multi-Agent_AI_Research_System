@@ -3,6 +3,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from tools import web_search, scrape_url
+from rich import print
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -22,6 +23,8 @@ def build_reader_agent():
         model = llm,
         tools = [scrape_url]
     )
+
+
 
 # Writer chain
 
@@ -45,7 +48,7 @@ Be detailed, factual and professional."""),
     ]
 )
 
-writer = writer_prompt | llm | StrOutputParser()
+writer_chain = writer_prompt | llm | StrOutputParser()
 
 # critic_chain
 
