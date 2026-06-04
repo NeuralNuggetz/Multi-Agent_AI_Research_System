@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MARS — Multi-Agent Research System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07090f;
+    --surface: #0e1118;
+    --surface2: #151821;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --gold: #e8b84b;
+    --gold-dim: rgba(232,184,75,0.15);
+    --gold-glow: rgba(232,184,75,0.08);
+    --text: #f0eee8;
+    --muted: #7a7d8a;
+    --muted2: #4a4d5a;
+    --accent: #3d7fff;
+    --success: #2ecc71;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── NAVIGATION ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,9,15,0.85);
+    backdrop-filter: blur(20px);
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .nav-logo span { color: var(--muted); font-weight: 400; }
+
+  .nav-links { display: flex; gap: 0.5rem; }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding: 0.45rem 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-glow);
+  }
+
+  /* ── PAGE SYSTEM ── */
+  .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .page.active { display: block; }
+
+  /* ── PAGE 1: LANDING ── */
+  .hero {
+    padding: 10rem 3rem 5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(232,184,75,0.3);
+    padding: 0.35rem 0.9rem;
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .hero-title .line2 {
+    display: block;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.25);
+  }
+
+  .hero-title .accent { color: var(--gold); }
+
+  .hero-desc {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--muted);
+    max-width: 580px;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s 0.2s ease both;
+    font-weight: 300;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    animation: fadeUp 0.6s 0.3s ease both;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: #07090f;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    padding: 0.85rem 2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #f0c95c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(232,184,75,0.3);
+  }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    padding: 0.85rem 1.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); background: var(--surface); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), var(--gold-dim), var(--border2), transparent);
+    margin: 4rem 0;
+  }
+
+  /* ── PIPELINE SECTION ── */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 3rem 6rem;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.15;
+  }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 500px;
+    margin-bottom: 3.5rem;
+    font-weight: 300;
+  }
+
+  /* ── PIPELINE STEPS ── */
+  .pipeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .step {
+    background: var(--surface);
+    padding: 2.5rem;
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .step:hover { background: var(--surface2); }
+
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .step-num::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border2);
+  }
+
+  .step-icon {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .step-name {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .step-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  .step-tech {
+    margin-top: 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--gold);
+    background: var(--gold-glow);
+    border: 1px solid rgba(232,184,75,0.2);
+    padding: 0.3rem 0.7rem;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  /* ── STATS ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .stat-card:hover::before { transform: scaleX(1); }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    font-weight: 300;
+  }
+
+  /* ── PAGE 2: RESEARCH ── */
+  .research-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    min-height: 100vh;
+    padding-top: 64px;
+  }
+
+  .research-sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 3rem 2.5rem;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .sidebar-sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .input-group { margin-bottom: 1.5rem; }
+
+  .input-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .topic-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 300;
+    padding: 0.9rem 1.1rem;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .topic-input::placeholder { color: var(--muted2); }
+  .topic-input:focus { border-color: var(--gold); }
+
+  .topic-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .suggestion-chip {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .suggestion-chip:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-glow); }
+
+  .run-btn {
+    width: 100%;
+    background: var(--gold);
+    color: #07090f;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: auto;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .run-btn:hover:not(:disabled) {
+    background: #f0c95c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(232,184,75,0.25);
+  }
+
+  .run-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .run-btn .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #07090f;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .run-btn.loading .spinner { display: block; }
+  .run-btn.loading .btn-text::after { content: 'ing...'; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESEARCH OUTPUT ── */
+  .research-output {
+    padding: 3rem;
+    overflow-y: auto;
+  }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+  }
+
+  .output-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .output-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── PIPELINE TRACKER ── */
+  .pipeline-tracker {
+    display: flex;
+    gap: 0;
+    margin-bottom: 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .tracker-step {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .tracker-step:last-child { border-right: none; }
+
+  .tracker-step.completed { background: rgba(46,204,113,0.05); }
+  .tracker-step.active { background: rgba(232,184,75,0.07); }
+  .tracker-step.error { background: rgba(231,76,60,0.05); }
+
+  .tracker-step-num {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--muted2);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.1em;
+  }
+
+  .tracker-step-name {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tracker-step.completed .tracker-step-name { color: var(--success); }
+  .tracker-step.active .tracker-step-name { color: var(--gold); }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted2);
+    flex-shrink: 0;
+  }
+
+  .tracker-step.completed .status-dot { background: var(--success); }
+  .tracker-step.active .status-dot { background: var(--gold); animation: pulse 1.2s infinite; }
+  .tracker-step.error .status-dot { background: #e74c3c; }
+
+  /* ── RESULT CARDS ── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .result-card-header:hover { background: var(--surface2); }
+
+  .result-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .result-badge {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+  }
+
+  .badge-search { background: rgba(61,127,255,0.15); color: #5a9fff; border: 1px solid rgba(61,127,255,0.25); }
+  .badge-scrape { background: rgba(155,89,182,0.15); color: #b47de8; border: 1px solid rgba(155,89,182,0.25); }
+  .badge-report { background: rgba(232,184,75,0.12); color: var(--gold); border: 1px solid rgba(232,184,75,0.25); }
+  .badge-critic { background: rgba(46,204,113,0.1); color: #4ade80; border: 1px solid rgba(46,204,113,0.2); }
+
+  .collapse-icon {
+    color: var(--muted2);
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+  }
+
+  .result-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+
+  .result-card-body {
+    padding: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--muted);
+    font-weight: 300;
+    max-height: 500px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: var(--font-body);
+  }
+
+  .result-card-body a {
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(232,184,75,0.4);
+    word-break: break-all;
+    transition: color 0.15s;
+  }
+
+  .result-card-body a:hover {
+    color: #f0c95c;
+    text-decoration-color: var(--gold);
+  }
+
+  .result-card.collapsed .result-card-body { display: none; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    color: var(--muted2);
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  .empty-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-desc {
+    font-size: 0.82rem;
+    font-weight: 300;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+
+  /* ── ERROR STATE ── */
+  .error-box {
+    background: rgba(231,76,60,0.08);
+    border: 1px solid rgba(231,76,60,0.2);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #e87070;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+
+  .error-box.visible { display: block; }
+
+  /* ── SKELETON ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    height: 14px;
+    margin-bottom: 8px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── FOOTER ── */
+  .landing-footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 3rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    opacity: 0.5;
+  }
+
+  .footer-text {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted2);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── GRID DECORATIVE LINES ── */
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: 80px; right: 0;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle at center, rgba(232,184,75,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── TECH BADGE ── */
+  .tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 3rem;
+  }
+
+  .tech-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.85rem;
+    border-radius: 3px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .hero { padding: 8rem 1.5rem 3rem; }
+    .section { padding: 0 1.5rem 4rem; }
+    .pipeline { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; }
+    .research-layout { grid-template-columns: 1fr; }
+    .research-sidebar { position: relative; height: auto; top: 0; }
+    .pipeline-tracker { flex-direction: column; }
+    .tracker-step { border-right: none; border-bottom: 1px solid var(--border); }
+    .landing-footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">MARS <span>/ Research</span></div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('home')">Overview</button>
+    <button class="nav-btn" onclick="showPage('research')">Run Research</button>
+  </div>
+</nav>
+
+<!-- ══════════════════ PAGE 1: HOME ══════════════════ -->
+<div class="page active" id="page-home">
+  <div class="hero" style="position:relative">
+    <div class="hero-tag">v1.0 · Multi-Agent System · LangChain</div>
+    <h1 class="hero-title">
+      Research at<br>
+      <span class="line2">Machine</span>
+      <span class="accent"> Speed.</span>
+    </h1>
+    <p class="hero-desc">
+      A fully autonomous research pipeline powered by four specialized AI agents —
+      from live web search to expert critique, delivered in seconds.
+    </p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="showPage('research')">Start Researching →</button>
+      <button class="btn-ghost" onclick="document.getElementById('pipeline-section').scrollIntoView({behavior:'smooth'})">See how it works</button>
+    </div>
+  </div>
+
+  <div class="divider" style="max-width:1100px;margin:0 auto 0;padding:0 3rem"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),rgba(232,184,75,0.15),rgba(255,255,255,0.07),transparent)"></div></div>
+
+  <div class="section" id="pipeline-section" style="padding-top:4rem">
+    <div class="section-label">// pipeline architecture</div>
+    <h2 class="section-title">Four agents.<br>One coherent answer.</h2>
+    <p class="section-sub">Each agent handles a distinct task — together they turn a single query into a thoroughly researched, critiqued report.</p>
+
+    <div class="pipeline">
+      <div class="step">
+        <div class="step-num">01 / SEARCH</div>
+        <span class="step-icon">🔍</span>
+        <div class="step-name">Search Agent</div>
+        <p class="step-desc">Queries the web using live search tools to gather recent, authoritative information from multiple sources on your topic.</p>
+        <span class="step-tech">Tavily Search API</span>
+      </div>
+      <div class="step">
+        <div class="step-num">02 / READER</div>
+        <span class="step-icon">📄</span>
+        <div class="step-name">Reader Agent</div>
+        <p class="step-desc">Picks the most relevant URL from search results and scrapes it deeply, extracting structured content beyond what snippets provide.</p>
+        <span class="step-tech">Web Scraping Tool</span>
+      </div>
+      <div class="step">
+        <div class="step-num">03 / WRITER</div>
+        <span class="step-icon">✍️</span>
+        <div class="step-name">Writer Chain</div>
+        <p class="step-desc">Synthesizes search results and scraped content into a comprehensive, well-structured research report with clear insights.</p>
+        <span class="step-tech">LLM Chain · GPT-4o</span>
+      </div>
+      <div class="step">
+        <div class="step-num">04 / CRITIC</div>
+        <span class="step-icon">🔬</span>
+        <div class="step-name">Critic Chain</div>
+        <p class="step-desc">Reviews the draft report for accuracy, completeness, bias, and quality — delivering structured feedback to validate the output.</p>
+        <span class="step-tech">LLM Chain · Evaluator</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Specialized AI Agents</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">~30s</div>
+        <div class="stat-label">Average Pipeline Runtime</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">REST</div>
+        <div class="stat-label">FastAPI Powered Backend</div>
+      </div>
+    </div>
+
+    <div class="tech-stack">
+      <span class="tech-badge">Python 3.11</span>
+      <span class="tech-badge">FastAPI</span>
+      <span class="tech-badge">LangChain</span>
+      <span class="tech-badge">Pydantic v2</span>
+      <span class="tech-badge">OpenAI GPT-4o</span>
+      <span class="tech-badge">Tavily Search</span>
+      <span class="tech-badge">BeautifulSoup</span>
+      <span class="tech-badge">Uvicorn</span>
+    </div>
+  </div>
+
+  <div class="landing-footer">
+    <div class="footer-logo">MARS</div>
+    <div class="footer-text">Multi-Agent Research System · Built with FastAPI + LangChain</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════ PAGE 2: RESEARCH ══════════════════ -->
+<div class="page" id="page-research">
+  <div class="research-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="research-sidebar">
+      <div class="sidebar-title">New Research</div>
+      <p class="sidebar-sub">Enter a topic and the four-agent pipeline will gather, scrape, write, and critique a full report.</p>
+
+      <div class="input-group">
+        <label class="input-label">Research Topic</label>
+        <textarea class="topic-input" id="topicInput" placeholder="e.g. Latest breakthroughs in quantum computing 2024..."></textarea>
+        <div class="topic-suggestions">
+          <button class="suggestion-chip" onclick="setSuggestion('Artificial General Intelligence progress 2024')">AGI progress</button>
+          <button class="suggestion-chip" onclick="setSuggestion('Climate change solutions 2024')">Climate tech</button>
+          <button class="suggestion-chip" onclick="setSuggestion('Large Language Models latest research')">LLMs</button>
+          <button class="suggestion-chip" onclick="setSuggestion('CRISPR gene editing breakthroughs')">CRISPR</button>
+          <button class="suggestion-chip" onclick="setSuggestion('Quantum computing recent developments')">Quantum</button>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; padding-top:2rem">
+        <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted2);margin-bottom:0.75rem;letter-spacing:0.08em">
+          API → <span style="color:var(--gold)">localhost:8000/research</span>
+        </div>
+        <button class="run-btn" id="runBtn" onclick="runResearch()">
+          <div class="spinner"></div>
+          <span class="btn-text">Run</span> Pipeline
+        </button>
+      </div>
+    </aside>
+
+    <!-- OUTPUT PANEL -->
+    <main class="research-output">
+      <div class="output-header">
+        <div class="output-title">Research Output</div>
+        <div class="output-meta" id="outputMeta">—</div>
+      </div>
+
+      <!-- PIPELINE TRACKER -->
+      <div class="pipeline-tracker">
+        <div class="tracker-step" id="track-search">
+          <div class="tracker-step-num">01</div>
+          <div class="tracker-step-name"><div class="status-dot"></div>Search Agent</div>
+        </div>
+        <div class="tracker-step" id="track-reader">
+          <div class="tracker-step-num">02</div>
+          <div class="tracker-step-name"><div class="status-dot"></div>Reader Agent</div>
+        </div>
+        <div class="tracker-step" id="track-writer">
+          <div class="tracker-step-num">03</div>
+          <div class="tracker-step-name"><div class="status-dot"></div>Writer Chain</div>
+        </div>
+        <div class="tracker-step" id="track-critic">
+          <div class="tracker-step-num">04</div>
+          <div class="tracker-step-name"><div class="status-dot"></div>Critic Chain</div>
+        </div>
+      </div>
+
+      <!-- ERROR BOX -->
+      <div class="error-box" id="errorBox"></div>
+
+      <!-- RESULTS -->
+      <div id="resultsArea">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">◈</div>
+          <div class="empty-title">Nothing here yet</div>
+          <p class="empty-desc">Enter a research topic and click Run Pipeline to begin your analysis.</p>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+
+<script>
+  const API_BASE = 'http://localhost:8000';
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    const btns = document.querySelectorAll('.nav-btn');
+    if (name === 'home') btns[0].classList.add('active');
+    else btns[1].classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function setSuggestion(text) {
+    document.getElementById('topicInput').value = text;
+    document.getElementById('topicInput').focus();
+  }
+
+  function resetTracker() {
+    ['search','reader','writer','critic'].forEach(s => {
+      const el = document.getElementById('track-' + s);
+      el.className = 'tracker-step';
+    });
+  }
+
+  function setTrackerState(step, state) {
+    const el = document.getElementById('track-' + step);
+    el.className = 'tracker-step ' + state;
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('visible');
+  }
+
+  function createResultCard(id, title, badgeClass, badgeText, content) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.id = 'card-' + id;
+    card.innerHTML = `
+      <div class="result-card-header" onclick="toggleCard('${id}')">
+        <div class="result-card-title">
+          <span class="result-badge ${badgeClass}">${badgeText}</span>
+          ${title}
+        </div>
+        <span class="collapse-icon">▾</span>
+      </div>
+      <div class="result-card-body">${linkifyContent(content)}</div>
+    `;
+    return card;
+  }
+
+  function toggleCard(id) {
+    document.getElementById('card-' + id).classList.toggle('collapsed');
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function linkifyContent(text) {
+    const escaped = escapeHtml(text);
+    const urlRegex = /(https?:\/\/[^\s<>"')\]]+)/g;
+    return escaped.replace(urlRegex, url => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+  }
+
+  function createSkeleton() {
+    const div = document.createElement('div');
+    div.id = 'skeleton-loader';
+    div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1.5rem';
+    div.innerHTML = Array(6).fill(0).map((_, i) => 
+      `<div class="skeleton" style="width:${[100,85,90,70,95,60][i]}%"></div>`
+    ).join('');
+    return div;
+  }
+
+  async function runResearch() {
+    const topic = document.getElementById('topicInput').value.trim();
+    if (!topic) {
+      document.getElementById('topicInput').focus();
+      document.getElementById('topicInput').style.borderColor = '#e74c3c';
+      setTimeout(() => document.getElementById('topicInput').style.borderColor = '', 1500);
+      return;
+    }
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    const resultsArea = document.getElementById('resultsArea');
+    hideError();
+    resetTracker();
+    resultsArea.innerHTML = '';
+    resultsArea.appendChild(createSkeleton());
+
+    document.getElementById('outputMeta').textContent = 'Running pipeline...';
+
+    const startTime = Date.now();
+
+    // Animate tracker steps with delays
+    const steps = ['search','reader','writer','critic'];
+    let stepIndex = 0;
+    const stepTimer = setInterval(() => {
+      if (stepIndex > 0) setTrackerState(steps[stepIndex-1], 'completed');
+      if (stepIndex < steps.length) setTrackerState(steps[stepIndex], 'active');
+      stepIndex++;
+      if (stepIndex > steps.length) clearInterval(stepTimer);
+    }, 5000);
+
+    try {
+      const res = await fetch(`${API_BASE}/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic })
+      });
+
+      clearInterval(stepTimer);
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      steps.forEach(s => setTrackerState(s, 'completed'));
+
+      resultsArea.innerHTML = '';
+      document.getElementById('outputMeta').textContent = `Completed in ${elapsed}s`;
+
+      const cards = [
+        { id: 'search', title: 'Search Agent Results', cls: 'badge-search', badge: 'Search', content: data.search_result },
+        { id: 'scrape', title: 'Scraped Web Content', cls: 'badge-scrape', badge: 'Scrape', content: data.scraped_content },
+        { id: 'report', title: 'Research Report', cls: 'badge-report', badge: 'Report', content: data.report },
+        { id: 'critic', title: "Critic's Review", cls: 'badge-critic', badge: 'Critique', content: data.feedback },
+      ];
+
+      cards.forEach((c, i) => {
+        const card = createResultCard(c.id, c.title, c.cls, c.badge, c.content);
+        card.style.animationDelay = `${i * 0.1}s`;
+        resultsArea.appendChild(card);
+      });
+
+    } catch (err) {
+      clearInterval(stepTimer);
+      resetTracker();
+      document.getElementById('skeleton-loader')?.remove();
+
+      let msg = err.message;
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        msg = 'Cannot connect to API. Make sure your FastAPI server is running: uvicorn api:app --reload';
+      }
+
+      showError(msg);
+      document.getElementById('outputMeta').textContent = 'Failed';
+      resultsArea.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Pipeline failed</div><p class="empty-desc">Check the error above and ensure your backend is running.</p></div>`;
+    }
+
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+
+  // Allow Ctrl+Enter to submit
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('topicInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runResearch();
+    });
+  });
+</script>
+</body>
+</html>
