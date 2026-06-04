@@ -298,15 +298,6 @@ pip install fastapi uvicorn pydantic langchain langchain-openai langchain-commun
 
 ---
 
-## Author
-
-**Dhanraj Verma**
-
-Building in public → documenting the journey from Computer Vision to AI/GenAI Engineering.
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/your-username)
-
----
-
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
