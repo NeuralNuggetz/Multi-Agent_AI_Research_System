@@ -62,9 +62,6 @@ User Input (topic)
 ---
 
 ## Screenshots
-
-> 📸 *Add your screenshots here after running the project*
-
 | Overview Page | Research Page |
 |:---:|:---:|
 | ![Overview](assets/screenshot-overview.png) | ![Research](assets/screenshot-research.png) |
