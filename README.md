@@ -6,7 +6,6 @@
 
 **An autonomous AI research pipeline that searches, scrapes, writes, and critiques — end to end.**
 
-<br/>
 
 </div>
 
